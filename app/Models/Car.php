@@ -21,4 +21,7 @@ class Car extends Model
     public function rate(){
         return $this->hasMany(CarRate::class,'product_id');
     }
+    public function order(){
+        return $this->belongsToMany(Order::class,'order_cars','car_id','order_id')->withPivot('updated_at','created_at');
+    }
 }

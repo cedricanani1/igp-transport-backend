@@ -10,6 +10,7 @@ use App\Models\OrderCar;
 use Illuminate\Support\Str;
 use App\Services\UserService as User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -39,6 +40,61 @@ class OrderController extends Controller
         }
 
         return response()->json($orders);
+    }
+    
+        public function sellerPeriode(Request $request)
+    {
+        $from= $request->from;
+        $to= $request->to;
+        $products= Car::All();
+        $orders =  Order::with('cart')->whereBetween(DB::raw("(STR_TO_DATE(orders.updated_at,'%Y-%m-%d'))"),[$from,$to])->where('status', 'delivered')->get();
+        foreach ($products as $key => $product) {
+                    $product->count = 0;
+                    $product->amount = 0;
+            foreach ($orders as $key => $order) {
+                foreach ($order->cart as $key => $cart) {
+                   if ($product->id === $cart->product_id) {
+                       $product->count += $cart->quantity;
+                       $product->amount += $cart->quantity * $cart->price;
+                   }else{
+                    $product->count += 0;
+                    $product->amount += 0;
+                   }
+                }
+            }
+        }
+        return response()->json($products);
+    }
+
+    public function UserBestSeller()
+    {
+        $users = $this->UserSeller();
+        $orders =  Order::with('cart')->get();
+        foreach ($users as $key => $user) {
+            $user->order_count = 0;
+
+            $user->count_article = 0;
+            $user->cumul_amount = 0;
+            foreach ($orders as $key => $order) {
+                if ($user->id === $order->user_id) {
+                    $user->order_count += 1;
+
+                    foreach ($order->cart as $key => $cart) {
+                        if ($user->id === $cart->user_id) {
+                            $user->count_article += $cart->quantity;
+                            $user->cumul_amount += $cart->quantity * $cart->price;
+                        }else{
+                         $user->count_article += 0;
+                         $user->count_article += 0;
+                        }
+                     }
+                }else{
+                    $user->order_count += 0;
+                }
+
+            }
+        }
+        return response()->json($users);
     }
 
     /**
@@ -173,7 +229,18 @@ class OrderController extends Controller
      */
     public function update(UpdateOrderRequest $request, Order $order)
     {
-        //
+        $order->status =  $request->status;
+        $order->save();
+
+        if ($order) {
+            return response()->json([
+                'state' =>true
+            ]);
+        }else{
+            return response()->json([
+                'state' =>false
+            ]);
+        }
     }
 
     /**
@@ -190,6 +257,14 @@ class OrderController extends Controller
 
         if(User::get($token)->success == true) {
             return User::get($token)->user;
+        }else{
+            return null;
+        }
+    }
+    private function UserSeller(){
+
+        if(User::getUserSeller()->success == true) {
+            return User::getUserSeller()->users;
         }else{
             return null;
         }

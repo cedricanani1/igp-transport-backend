@@ -26,7 +26,7 @@ class StoreCarTypeRequest extends FormRequest
         return [
             'libelle' => 'required',
             'description' => 'nullable',
-            'parent_id' => 'required|integer',
+            'parent_id' => 'nullable|integer',
         ];
     }
 }

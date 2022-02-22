@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Car;
+use App\Models\Order;
 use App\Http\Requests\StoreCarRequest;
 use App\Http\Requests\UpdateCarRequest;
 use Illuminate\Http\Request;
@@ -56,6 +57,72 @@ class CarController extends Controller
         return response()->json($cars);
     }
 
+    public function bestRate()
+    {
+        $products =  Car::withCount('order','type','rate')->orderByDesc("rate_count")->get();
+        foreach ($products as $key => $product) {
+            $rate=0;
+            foreach ($product->rate as $key => $value) {
+                $rate += (int) $value->rate;
+            }
+            if (count($product->rate) > 0) {
+                $product->start = round($rate/count($product->rate));
+            }else{
+                $product->start =  0;
+            }
+            $product->type;
+
+        }
+        return response()->json($products);
+    }
+    public function best(Request $request)
+    {
+        $status= $request->status;
+        $products =  Car::withCount('order')->orderByDesc("order_count")->whereHas('order', function($q) use ($status){
+            $q->where('status', $status);
+        })->get();
+        foreach ($products as $key => $product) {
+            $rate=0;
+            foreach ($product->rate as $key => $value) {
+                $rate += (int) $value->rate;
+            }
+
+            if (count($product->rate) > 0) {
+                $product->start = round($rate/count($product->rate));
+            }else{
+                $product->start =  0;
+            }
+
+        }
+        return response()->json($products);
+    }
+    public function sellerAlltime()
+    {
+
+        $cars= Car::has('order')->get();
+        $orders =  Order::with('cart')->where('status', 'new')->get();
+        foreach ($cars as $key => $car) {
+            foreach ($orders as $key => $order) {
+                foreach ($order->cart as $key => $cart) {
+                   if ($car->id === $cart->car_id) {
+                       $car->count += 1;
+                       $car->amount += $cart->days * $cart->price;
+                   }else{
+                    $car->count += 0;
+                    $car->amount += 0;
+                   }
+                }
+            }
+        }
+        return response()->json($cars);
+    }
+
+    public function bestview()
+    {
+        $products =  Car::orderByDesc("view")->orderByDesc("view")->get();
+
+        return response()->json($products);
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -123,6 +190,8 @@ class CarController extends Controller
         $car->models;
         $car->rate;
         $rate=0;
+        $car->view +=1;
+        $car->save();
         foreach ($car->rate as $key => $value) {
             $rate += (int) $value->rate;
         }

@@ -33,3 +33,10 @@ Route::post('/deleteFile', [CarController::class,'deleteFile']);
 Route::post('/addFile', [CarController::class,'addFile']);
 Route::post('/searchCar', [CarController::class,'searchCar']);
 Route::post('/rating', [CarRateController::class,'store']);
+
+Route::get('/bestviews', [CarController::class,'bestView']);
+Route::get('/bestrate', [CarController::class,'bestRate']);
+Route::post('/bestproduct', [CarController::class,'best']);
+Route::get('/getsellAllTime', [CarController::class,'sellerAlltime']);
+Route::post('/getsellByPeriode', [OrderController::class,'sellerPeriode']);
+Route::get('/getuserSeller', [OrderController::class,'UserBestSeller']);
